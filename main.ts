@@ -97,7 +97,7 @@ export default class MyPlugin extends Plugin {
 				alias = alias.concat(aliasBefore,comma,aliasAfter);
 				/*alias = alias.concat(comma);*/
 				/*alias = alias.concat(aliasAfter);*/
-				(linkElements[i] as HTMLElement).href = "link";
+				//(linkElements[i] as HTMLElement).href = "link";
 				(linkElements[i] as HTMLElement).innerText = alias;
 				(linkElements[i] as HTMLElement).className = 'header-range-link'
 
@@ -105,7 +105,21 @@ export default class MyPlugin extends Plugin {
 		}
 		this.registerMarkdownPostProcessor(postProc);
 
-		document.on('mouseover', '.internal-link', this.plugin.printCoucou);
+		let hoverHeaderRange = (event: MouseEvent, target: HTMLElement) => {
+			console.log("hoverHeaderRange")
+			this.app.workspace.trigger("link-hover",{},null, "/Target", "/Target")
+		}
+
+		let clickHeaderRange = (event: MouseEvent, target: HTMLElement) => {
+			console.log("clickHeaderRange")
+			event.preventDefault();
+        	event.stopPropagation();
+        	(event: MouseEvent, link: string, app: App) => {
+    		this.app.workspace.openLinkText("Target", '')};
+		}
+
+		document.on('mouseover', `.header-range-link`, hoverHeaderRange);
+		document.on('click', `.header-range-link`, clickHeaderRange);
 
 	}
 
@@ -166,12 +180,8 @@ class SampleSettingTab extends PluginSettingTab {
 				}));
 	}
 
-	printCoucou = () => {
-		console.log("coucou")
-	}
-
-	filePreviewOnHover = (event: MouseEvent, target: HTMLElement) => {
-    	console.log("coucou")
+	//filePreviewOnHover = (event: MouseEvent, target: HTMLElement) => {
+    	//console.log("coucou")
     	//this.app.workspace.trigger('link-hover', {}, event.target, target.getAttr('href'), target.getAttr('href'));
-	};
+	//};
 }
