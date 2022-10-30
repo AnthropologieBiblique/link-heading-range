@@ -70,12 +70,43 @@ export default class MyPlugin extends Plugin {
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
+		// this.registerDomEvent(document, 'mouseover', (evt: PointerEvent) => {
+		//	console.log('pointer', evt);
+		//});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
+		let postProc: MarkdownPostProcessor;
+
+		postProc = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+
+			let linkElements = el.querySelectorAll('a.internal-link');
+			let barIndex, aliasBefore,aliasAfter,comma,alias;
+
+			for(let i = 0; i < linkElements.length; i++) {
+
+				let linkAsHTML = (linkElements[i] as HTMLElement).innerText;
+
+				barIndex = linkAsHTML.indexOf(">");
+				if(barIndex < 0) continue;
+				aliasBefore = linkAsHTML.substr(0,barIndex-1);
+				aliasAfter = linkAsHTML.substr(barIndex+2);
+				comma = ",";
+				alias = "";
+				alias = alias.concat(aliasBefore,comma,aliasAfter);
+				/*alias = alias.concat(comma);*/
+				/*alias = alias.concat(aliasAfter);*/
+				(linkElements[i] as HTMLElement).href = "link";
+				(linkElements[i] as HTMLElement).innerText = alias;
+				(linkElements[i] as HTMLElement).className = 'header-range-link'
+
+			}
+		}
+		this.registerMarkdownPostProcessor(postProc);
+
+		document.on('mouseover', '.internal-link', this.plugin.printCoucou);
+
 	}
 
 	onunload() {
@@ -134,4 +165,13 @@ class SampleSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 	}
+
+	printCoucou = () => {
+		console.log("coucou")
+	}
+
+	filePreviewOnHover = (event: MouseEvent, target: HTMLElement) => {
+    	console.log("coucou")
+    	//this.app.workspace.trigger('link-hover', {}, event.target, target.getAttr('href'), target.getAttr('href'));
+	};
 }
