@@ -42,14 +42,23 @@ export default class MyPlugin extends Plugin {
 					continue
 				}
 
-				if (matches[3] == undefined) {
+				let page = matches[1];
+				let headerA = matches[2];
+				let headerB = matches[3];
+				let dividerP2H = ",";
+				let dividerH2H = "-"
+				let innerText = "";
+				let href = "";
+
+				let standardInnerText = "";
+				standardInnerText = standardInnerText.concat(page," > ",headerA);
+
+				if (headerB == undefined) {
 					// console.log("Link with one header, only changing innerText")
-					let page = matches[1];
-					let header = matches[2];
-					let dividerP2H = ",";
-					let innerText = "";
-					innerText = innerText.concat(page,dividerP2H,header);
-					(linkElements[i] as HTMLElement).innerText = innerText;
+					if ((linkElements[i] as HTMLElement).innerText == standardInnerText){
+						innerText = innerText.concat(page,dividerP2H,headerA);
+						(linkElements[i] as HTMLElement).innerText = innerText;
+					}
 					continue
 				}
 
@@ -63,19 +72,21 @@ export default class MyPlugin extends Plugin {
 						(heading) => heading.heading == matches[2]
 					)[0].position.end.line;
 
-				let page = matches[1];
-				let headerA = matches[2];
-				let headerB = matches[3];
-				let dividerP2H = ",";
-				let dividerH2H = "-"
-				let innerText = "";
-				let href = "";
-				innerText = innerText.concat(page,dividerP2H,headerA,dividerH2H,headerB);
-				(linkElements[i] as HTMLElement).innerText = innerText;
+				innerText = "";
+				href = "";
+
 				(linkElements[i] as HTMLElement).href = href.concat(page,"#",headerA);
 				(linkElements[i] as HTMLElement).className = 'header-range-link';
 				(linkElements[i] as HTMLElement).setAttribute("linktext",page);
 				(linkElements[i] as HTMLElement).setAttribute("scrollline",line);
+
+				standardInnerText = "";
+				standardInnerText = standardInnerText.concat(page," > ",headerA," > ",headerB);
+
+				if ((linkElements[i] as HTMLElement).innerText == standardInnerText) {
+					innerText = innerText.concat(page,dividerP2H,headerA,dividerH2H,headerB);
+					(linkElements[i] as HTMLElement).innerText = innerText;
+				}
 
 				// TODO : Can we cache these elements ?
 
