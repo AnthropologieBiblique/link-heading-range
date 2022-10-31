@@ -1,9 +1,9 @@
 {
-	"id": "link-header-range",
-	"name": "Link header range",
+	"id": "link-heading-range",
+	"name": "Link heading range",
 	"version": "0.0.1",
 	"minAppVersion": "1.0.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
+	"description": "This is a plugin allowing for linking to a heading range, in the [[Page#HeaderA#HeaderB]] extended wikilink format.",
 	"author": "Anthropologie Biblique",
 	"authorUrl": "https://obsidian.md",
 	"isDesktopOnly": false
