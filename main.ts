@@ -51,12 +51,13 @@ export default class MyPlugin extends Plugin {
 			console.log("hoverHeaderRange")
 			const p = document.createElement("p");
 			p.textContent = "Hello, World!";
-			//this.app.workspace.trigger("link-hover",{},target, "Target", "")
-			this.app.workspace.trigger("hover-link",event,"header-range-link",this.parent,target, "Target", "")
+			//this.app.workspace.trigger("link-hover",{},target, "Target", "",{focus:false,scroll:40,line:40})
+			this.app.workspace.trigger("link-hover",target,target, "Target", "",{startLoc:{line:40,col:0},endLoc:{line:50,col:0},scroll:50})
+			//this.app.workspace.trigger("hover-link",event,"header-range-link",this.parent,target, "Target", "")
 		}
 
 		let clickHeaderRange = async (event: MouseEvent, target: HTMLElement) => {
-    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
+    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button,{eState:{scroll:39}})
 			// TODO : scroll and highlight in yellow the header range
 		}
 
