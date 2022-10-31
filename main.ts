@@ -56,8 +56,12 @@ export default class MyPlugin extends Plugin {
 				// console.log("Link with two headers, changing innerText and className")
 				// TODO : What should happen if user mistakenly inputs last header first ?
 
-				//console.log(this.app.workspace.getActiveFile())
-				console.log(this.app.metadataCache.getFileCache(this.app.workspace.getActiveFile()).toString())
+				let line = this.app.metadataCache.getFileCache(
+					this.app.vault.getMarkdownFiles().filter(
+						(file) => file.basename == matches[1])[0]
+					)["headings"].filter(
+						(heading) => heading.heading == matches[2]
+					)[0].position.end.line;
 
 				let page = matches[1];
 				let headerA = matches[2];
@@ -71,7 +75,7 @@ export default class MyPlugin extends Plugin {
 				(linkElements[i] as HTMLElement).href = href.concat(page,"#",headerA);
 				(linkElements[i] as HTMLElement).className = 'header-range-link';
 				(linkElements[i] as HTMLElement).setAttribute("linktext",page);
-				(linkElements[i] as HTMLElement).setAttribute("scrollline",40);
+				(linkElements[i] as HTMLElement).setAttribute("scrollline",line);
 
 				// TODO : Can we cache these elements ?
 
