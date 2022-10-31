@@ -24,32 +24,65 @@ export default class MyPlugin extends Plugin {
 		postProc = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 
 			let linkElements = el.querySelectorAll('a.internal-link');
+			let wikiLinkRegex = /([^\#\]\|\[]*)\#?([^\#\]\|\[]*)?\#?([^\|\]\[]*)?/;
 			let barIndex, aliasBefore,aliasAfter,comma,alias;
 
 			for(let i = 0; i < linkElements.length; i++) {
+				let linkAsHTML = (linkElements[i] as HTMLElement).getAttribute('data-href')
+				let matches = wikiLinkRegex.exec(linkAsHTML)
+				/*
+				console.log(matches);
+				console.log("Page", matches[1]);
+				console.log("Header A", matches[2]);
+				console.log("Header B", matches[3]);
+				*/
 
-				let linkAsHTML = (linkElements[i] as HTMLElement).innerText;
+				if (matches[2] == undefined) {
+					// console.log("Simple link, doing nothing")
+					continue
+				}
 
-				barIndex = linkAsHTML.indexOf(">");
-				if(barIndex < 0) continue;
-				aliasBefore = linkAsHTML.substr(0,barIndex-1);
-				aliasAfter = linkAsHTML.substr(barIndex+2);
-				comma = ",";
-				alias = "";
-				alias = alias.concat(aliasBefore,comma,aliasAfter);
-				/*alias = alias.concat(comma);*/
-				/*alias = alias.concat(aliasAfter);*/
-				//(linkElements[i] as HTMLElement).href = "link";
-				(linkElements[i] as HTMLElement).innerText = alias;
-				(linkElements[i] as HTMLElement).className = 'header-range-link'
+				if (matches[3] == undefined) {
+					// console.log("Link with one header, only changing innerText")
+					let page = matches[1];
+					let header = matches[2];
+					let dividerP2H = ",";
+					let innerText = "";
+					innerText = innerText.concat(page,dividerP2H,header);
+					(linkElements[i] as HTMLElement).innerText = innerText;
+					continue
+				}
 
+				// console.log("Link with two headers, changing innerText and className")
+				// TODO : What should happen if user mistakenly inputs last header first ?
+
+				//console.log(this.app.workspace.getActiveFile())
+				console.log(this.app.metadataCache.getFileCache(this.app.workspace.getActiveFile()).toString())
+
+				let page = matches[1];
+				let headerA = matches[2];
+				let headerB = matches[3];
+				let dividerP2H = ",";
+				let dividerH2H = "-"
+				let innerText = "";
+				let href = "";
+				innerText = innerText.concat(page,dividerP2H,headerA,dividerH2H,headerB);
+				(linkElements[i] as HTMLElement).innerText = innerText;
+				(linkElements[i] as HTMLElement).href = href.concat(page,"#",headerA);
+				(linkElements[i] as HTMLElement).className = 'header-range-link';
+				(linkElements[i] as HTMLElement).setAttribute("linktext",page);
+				(linkElements[i] as HTMLElement).setAttribute("scrollline",40);
+
+				// TODO : Can we cache these elements ?
+
+				continue
 			}
 		}
+
 		this.registerMarkdownPostProcessor(postProc);
 
 		let hoverHeaderRange = (event: MouseEvent, target: HTMLElement) => {
-			//console.log("hoverHeaderRange")
-			this.app.workspace.trigger("link-hover",target,target, "Target", "",{scroll:44})
+			this.app.workspace.trigger("link-hover",target,target, target.getAttribute("linktext"), "",{scroll:parseInt(target.getAttribute("scrollline"))})
 			// Apparently nothing else from eState than "scroll" will be used by the hover preview internals (see Discord message)
 			// TODO : Can I find a way to remove the yellow highlight ?
 			// TODO : Can I find a way to scroll to first header when clicking on the link tooltip ?
@@ -57,10 +90,9 @@ export default class MyPlugin extends Plugin {
 		}
 
 		let clickHeaderRange = async (event: MouseEvent, target: HTMLElement) => {
-    		//console.log("clickHeaderRange")
-    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button,{scroll:39})
+    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
 			// TODO : scroll and highlight in yellow the header range
-			// Tried {scroll:39,line:39,startLoc:{line:39,col:0,offset:0} as Loc,endLoc:{line:50,col:0,offset:0} as Loc} without success
+			// Tried to pass an ephemeral state, but without success...
 		}
 
 		document.on('mouseover', `.header-range-link`, hoverHeaderRange);
@@ -69,6 +101,13 @@ export default class MyPlugin extends Plugin {
 	}
 
 	onunload() {
+
+		document.off('mouseover', `.header-range-link`, hoverHeaderRange);
+		document.off('click', `.header-range-link`, clickHeaderRange);
+
+		// TODO : Option to loop through all files, 
+		// and replace [[Page#HeaderA#HeaderB]] by [[Page#HeaderA]]-HeaderB ?
+		// That would prevent the plugin from "beaking" notes
 
 	}
 
