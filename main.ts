@@ -31,12 +31,6 @@ export default class LinkHeadingRange extends Plugin {
 			for(let i = 0; i < linkElements.length; i++) {
 				let linkAsHTML = (linkElements[i] as HTMLElement).getAttribute('data-href')
 				let matches = wikiLinkRegex.exec(linkAsHTML)
-				/*
-				console.log(matches);
-				console.log("Page", matches[1]);
-				console.log("Header A", matches[2]);
-				console.log("Header B", matches[3]);
-				*/
 
 				if (matches[2] == undefined) {
 					// console.log("Simple link, doing nothing")

@@ -5,6 +5,6 @@
 	"minAppVersion": "1.0.0",
 	"description": "This is a plugin allowing for linking to a heading range, in the [[Page#HeaderA#HeaderB]] extended wikilink format.",
 	"author": "Anthropologie Biblique",
-	"authorUrl": "https://obsidian.md",
+	"authorUrl": "https://anthropologiebiblique.fr",
 	"isDesktopOnly": false
 }
