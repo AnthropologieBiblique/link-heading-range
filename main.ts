@@ -2,22 +2,23 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Key
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
-	mySetting: string;
+interface LinkHeadingRangePluginSettings {
+	dividerP2H: string;
+	dividerH2H: string
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const DEFAULT_SETTINGS: LinkHeadingRangePluginSettings = {
+	dividerP2H: ' > ',
+	dividerH2H: ' > ',
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class LinkHeadingRange extends Plugin {
+	settings: LinkHeadingRangePluginSettings;
 
 	async onload() {
 		await this.loadSettings();
-
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new LinkHeadingRangeSettingTab(this.app, this));
 
 		let postProc: MarkdownPostProcessor;
 
@@ -43,27 +44,27 @@ export default class MyPlugin extends Plugin {
 				}
 
 				let page = matches[1];
-				let headerA = matches[2];
-				let headerB = matches[3];
-				let dividerP2H = ",";
-				let dividerH2H = "-"
+				let headingA = matches[2];
+				let headingB = matches[3];
+				let dividerP2H = this.settings.dividerP2H;
+				let dividerH2H = this.settings.dividerH2H;
 				let innerText = "";
 				let href = "";
 
 				let standardInnerText = "";
-				standardInnerText = standardInnerText.concat(page," > ",headerA);
+				standardInnerText = standardInnerText.concat(page," > ",headingA);
 
-				if (headerB == undefined) {
-					// console.log("Link with one header, only changing innerText")
+				if (headingB == undefined) {
+					// console.log("Link with one heading, only changing innerText")
 					if ((linkElements[i] as HTMLElement).innerText == standardInnerText){
-						innerText = innerText.concat(page,dividerP2H,headerA);
+						innerText = innerText.concat(page,dividerP2H,headingA);
 						(linkElements[i] as HTMLElement).innerText = innerText;
 					}
 					continue
 				}
 
-				// console.log("Link with two headers, changing innerText and className")
-				// TODO : What should happen if user mistakenly inputs last header first ?
+				// console.log("Link with two headings, changing innerText and className")
+				// TODO : What should happen if user mistakenly inputs last heading first ?
 
 				let line = this.app.metadataCache.getFileCache(
 					this.app.vault.getMarkdownFiles().filter(
@@ -75,16 +76,16 @@ export default class MyPlugin extends Plugin {
 				innerText = "";
 				href = "";
 
-				(linkElements[i] as HTMLElement).href = href.concat(page,"#",headerA);
-				(linkElements[i] as HTMLElement).className = 'header-range-link';
+				(linkElements[i] as HTMLElement).href = href.concat(page,"#",headingA);
+				(linkElements[i] as HTMLElement).className = 'heading-range-link';
 				(linkElements[i] as HTMLElement).setAttribute("linktext",page);
 				(linkElements[i] as HTMLElement).setAttribute("scrollline",line);
 
 				standardInnerText = "";
-				standardInnerText = standardInnerText.concat(page," > ",headerA," > ",headerB);
+				standardInnerText = standardInnerText.concat(page," > ",headingA," > ",headingB);
 
 				if ((linkElements[i] as HTMLElement).innerText == standardInnerText) {
-					innerText = innerText.concat(page,dividerP2H,headerA,dividerH2H,headerB);
+					innerText = innerText.concat(page,dividerP2H,headingA,dividerH2H,headingB);
 					(linkElements[i] as HTMLElement).innerText = innerText;
 				}
 
@@ -100,25 +101,25 @@ export default class MyPlugin extends Plugin {
 			this.app.workspace.trigger("link-hover",target,target, target.getAttribute("linktext"), "",{scroll:parseInt(target.getAttribute("scrollline"))})
 			// Apparently nothing else from eState than "scroll" will be used by the hover preview internals (see Discord message)
 			// TODO : Can I find a way to remove the yellow highlight ?
-			// TODO : Can I find a way to scroll to first header when clicking on the link tooltip ?
-			// TODO : Can I find a way to display only the range in the popover instead of displaying the whole note and scroll to the first header ?
+			// TODO : Can I find a way to scroll to first heading when clicking on the link tooltip ?
+			// TODO : Can I find a way to display only the range in the popover instead of displaying the whole note and scroll to the first heading ?
 		}
 
 		let clickHeaderRange = async (event: MouseEvent, target: HTMLElement) => {
     		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
-			// TODO : scroll and highlight in yellow the header range
+			// TODO : scroll and highlight in yellow the heading range
 			// Tried to pass an ephemeral state, but without success...
 		}
 
-		document.on('mouseover', `.header-range-link`, hoverHeaderRange);
-		document.on('click', `.header-range-link`, clickHeaderRange);
+		document.on('mouseover', `.heading-range-link`, hoverHeaderRange);
+		document.on('click', `.heading-range-link`, clickHeaderRange);
 
 	}
 
 	onunload() {
 
-		document.off('mouseover', `.header-range-link`, hoverHeaderRange);
-		document.off('click', `.header-range-link`, clickHeaderRange);
+		document.off('mouseover', `.heading-range-link`, hoverHeaderRange);
+		document.off('click', `.heading-range-link`, clickHeaderRange);
 
 		// TODO : Option to loop through all files, 
 		// and replace [[Page#HeaderA#HeaderB]] by [[Page#HeaderA]]-HeaderB ?
@@ -135,10 +136,10 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class LinkHeadingRangeSettingTab extends PluginSettingTab {
+	plugin: LinkHeadingRange;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: LinkHeadingRange) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -148,17 +149,29 @@ class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
+		containerEl.createEl('h2', {text: 'Settings for Link Heading Range plugin.'});
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Page to heading divider')
+			.setDesc('This divider will be used in preview mode in all links, between the page and the heading')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('Enter a symbol')
+				.setValue(this.plugin.settings.dividerP2H)
 				.onChange(async (value) => {
-					console.log('Secret: ' + value);
-					this.plugin.settings.mySetting = value;
+					console.log('dividerP2H: ' + value);
+					this.plugin.settings.dividerP2H = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Heading to heading divider')
+			.setDesc('This divider will be used in preview mode in all links, between the first and the last heading')
+			.addText(text => text
+				.setPlaceholder('Enter a symbol')
+				.setValue(this.plugin.settings.dividerH2H)
+				.onChange(async (value) => {
+					console.log('dividerH2H: ' + value);
+					this.plugin.settings.dividerH2H = value;
 					await this.plugin.saveSettings();
 				}));
 	}
