@@ -4,6 +4,10 @@ This is a plugin for Obsidian (https://obsidian.md).
 It allows linking to a heading range, in the [[Page#HeaderA#HeaderB]] or [[Page#HeaderA#HeaderB|Alias]] extended wikilink format.
 We will call these extended wikilinks "heading range links" below.
 
+## Demo
+
+https://user-images.githubusercontent.com/24638389/199087148-0e7173e4-53ae-4bb6-9dde-53985dd6f130.mov
+
 ## Features
 
 Features are still pretty basic :
