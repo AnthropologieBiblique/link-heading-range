@@ -48,22 +48,22 @@ export default class MyPlugin extends Plugin {
 		this.registerMarkdownPostProcessor(postProc);
 
 		let hoverHeaderRange = (event: MouseEvent, target: HTMLElement) => {
-			console.log("hoverHeaderRange")
-			const p = document.createElement("p");
-			p.textContent = "Hello, World!";
-			//this.app.workspace.trigger("link-hover",{},target, "Target", "",{focus:false,scroll:40,line:40})
-			this.app.workspace.trigger("link-hover",target,target, "Target", "",{startLoc:{line:40,col:0},endLoc:{line:50,col:0},scroll:50})
-			//this.app.workspace.trigger("hover-link",event,"header-range-link",this.parent,target, "Target", "")
+			//console.log("hoverHeaderRange")
+			this.app.workspace.trigger("link-hover",target,target, "Target", "",{scroll:44})
+			// Apparently nothing else from eState than "scroll" will be used by the hover preview internals (see Discord message)
+			// TODO : Can I find a way to remove the yellow highlight ?
+			// TODO : Can I find a way to scroll to first header when clicking on the link tooltip ?
+			// TODO : Can I find a way to display only the range in the popover instead of displaying the whole note and scroll to the first header ?
 		}
 
 		let clickHeaderRange = async (event: MouseEvent, target: HTMLElement) => {
-    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button,{eState:{scroll:39}})
+    		//console.log("clickHeaderRange")
+    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button,{scroll:39})
 			// TODO : scroll and highlight in yellow the header range
+			// Tried {scroll:39,line:39,startLoc:{line:39,col:0,offset:0} as Loc,endLoc:{line:50,col:0,offset:0} as Loc} without success
 		}
 
-		// Show the header range when hovering on header-range-link
 		document.on('mouseover', `.header-range-link`, hoverHeaderRange);
-		// Copy internal-link behaviour when header-range-link is clicked
 		document.on('click', `.header-range-link`, clickHeaderRange);
 
 	}
