@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Keymap, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Keymap, Setting } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -20,13 +20,12 @@ export default class LinkHeadingRange extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new LinkHeadingRangeSettingTab(this.app, this));
 
-		let postProc: MarkdownPostProcessor;
+		const postProc: MarkdownPostProcessor;
 
 		postProc = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 
 			const linkElements = el.querySelectorAll('a.internal-link');
-			const wikiLinkRegex = /([^\#\]\|\[]*)\#?([^\#\]\|\[]*)?\#?([^\|\]\[]*)?/;
-			let barIndex, aliasBefore,aliasAfter,comma,alias;
+			const wikiLinkRegex = /([^#\]|[]*)#?([^#\]|[]*)?#?([^|\][]*)?/;
 
 			for(let i = 0; i < linkElements.length; i++) {
 				const linkAsHTML = (linkElements[i] as HTMLElement).getAttribute('data-href')
@@ -100,7 +99,7 @@ export default class LinkHeadingRange extends Plugin {
 		}
 
 		const clickHeaderRange = async (event: MouseEvent, target: HTMLElement) => {
-    		await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
+			await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
 			// TODO : scroll and highlight in yellow the heading range
 			// Tried to pass an ephemeral state, but without success...
 		}
