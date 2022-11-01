@@ -20,7 +20,7 @@ export default class LinkHeadingRange extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new LinkHeadingRangeSettingTab(this.app, this));
 
-		const postProc: MarkdownPostProcessor;
+		let postProc: MarkdownPostProcessor;
 
 		postProc = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 
