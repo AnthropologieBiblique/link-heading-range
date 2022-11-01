@@ -1,9 +1,9 @@
 {
 	"id": "link-heading-range",
 	"name": "Link heading range",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"minAppVersion": "1.0.0",
-	"description": "This is a plugin allowing for linking to a heading range, in the [[Page#HeaderA#HeaderB]] extended wikilink format.",
+	"description": "A plugin allowing for linking to a heading range, in the [[Page#HeaderA#HeaderB]] extended wikilink format.",
 	"author": "Anthropologie Biblique",
 	"authorUrl": "https://anthropologiebiblique.fr",
 	"isDesktopOnly": false
