@@ -142,11 +142,11 @@ class LinkHeadingRangeSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for Link Heading Range plugin.'});
+		containerEl.createEl('h2', {text: 'Settings for Link Heading Range'});
 
 		new Setting(containerEl)
 			.setName('Page to heading divider')
-			.setDesc('This divider will be used in preview mode in all links, between the page and the heading')
+			.setDesc('This divider will be used in preview mode in all links, between the page and the first heading')
 			.addText(text => text
 				.setPlaceholder('Enter a symbol')
 				.setValue(this.plugin.settings.dividerP2H)
