@@ -29,6 +29,7 @@ Any help is very much welcomed !
   - Have the yellow highlight covering the whole heading range section (not only HeaderA section)
   - Support ⌥ + ⌘ modifier
 - Improve the plugin onloading (for example, provide an optional automatic reshaping of all range links [[Page#HeaderA#HeaderB]] to [[Page#HeaderA]] > HeaderB so that the vault is not left in a broken state ?)
+- Support the transclusion syntax ![[Page#HeaderA#HeaderB]]
 - Support autocomplete in editor when typing the second heading [[Page#HeadingA#...
 - Reorder headings if user mistakenly starts with the last one ? What happens if more than one heading with the same title (currently it takes the first)
 - Support relevant search queries, such as "is that heading, in the middle of the range, linked to that note ?"
