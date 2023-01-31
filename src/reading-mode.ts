@@ -6,7 +6,7 @@ export function postProcessorBuilder(app: App, settings: LinkHeadingRangePluginS
   let postProc: MarkdownPostProcessor = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
     console.log('reading mode markdown processing', el, ctx.sourcePath);
     const linkElements = el.querySelectorAll('a.internal-link');
-    const wikiLinkRegex = /([^#\]|[]*)#?([^#\]|[]*)?#?([^|\][]*)?/;
+    const wikiLinkRegex = /([^#\]|[]*)#?([^#\]|[]*)?>?([^|\][]*)?/;
   
     for(let i = 0; i < linkElements.length; i++) {
       const linkAsHTML = (linkElements[i] as HTMLElement).getAttribute('data-href')
