@@ -1,123 +1,70 @@
 import { App, Plugin, PluginSettingTab, Keymap, Setting } from 'obsidian';
+import { buildCMViewPlugin } from './src/live-preview';
+import { postProcessorBuilder } from './src/reading-mode';
+
+import { Prec } from "@codemirror/state";
+import { LinkHeadingRangePluginSettings, DEFAULT_SETTINGS } from 'src/plugin-settings';
 
 // Remember to rename these classes and interfaces!
 
-interface LinkHeadingRangePluginSettings {
-	dividerP2H: string;
-	dividerH2H: string
-}
-
-const DEFAULT_SETTINGS: LinkHeadingRangePluginSettings = {
-	dividerP2H: ' > ',
-	dividerH2H: ' > ',
-}
 
 export default class LinkHeadingRange extends Plugin {
 	settings: LinkHeadingRangePluginSettings;
+	app: App;
+	// hoverHeadingRangeFunc: (event: MouseEvent, target: HTMLElement) => void;
+	// clickHeadingRangeFunc: (event: MouseEvent, target: HTMLElement) => void;
 
 	async onload() {
 		await this.loadSettings();
+		console.log('current seettings', this.settings);
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new LinkHeadingRangeSettingTab(this.app, this));
+		
+		// Reader mode processor
+		this.registerMarkdownPostProcessor(postProcessorBuilder(app, this.settings));
 
-		let postProc: MarkdownPostProcessor;
+		// Live preview mode processor
+		const ext = Prec.lowest(buildCMViewPlugin(this.app));
+		this.registerEditorExtension(ext);
 
-		postProc = (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-
-			const linkElements = el.querySelectorAll('a.internal-link');
-			const wikiLinkRegex = /([^#\]|[]*)#?([^#\]|[]*)?#?([^|\][]*)?/;
-
-			for(let i = 0; i < linkElements.length; i++) {
-				const linkAsHTML = (linkElements[i] as HTMLElement).getAttribute('data-href')
-				const matches = wikiLinkRegex.exec(linkAsHTML)
-
-				if (matches[2] == undefined) {
-					// console.log("Simple link, doing nothing")
-					continue
-				}
-
-				const page = matches[1];
-				const headingA = matches[2];
-				const headingB = matches[3];
-				const dividerP2H = this.settings.dividerP2H;
-				const dividerH2H = this.settings.dividerH2H;
-				let innerText = "";
-				let href = "";
-
-				let standardInnerText = "";
-				standardInnerText = standardInnerText.concat(page," > ",headingA);
-
-				if (headingB == undefined) {
-					// console.log("Link with one heading, only changing innerText")
-					if ((linkElements[i] as HTMLElement).innerText == standardInnerText){
-						innerText = innerText.concat(page,dividerP2H,headingA);
-						(linkElements[i] as HTMLElement).innerText = innerText;
-					}
-					continue
-				}
-
-				// console.log("Link with two headings, changing innerText and className")
-				// TODO : What should happen if user mistakenly inputs last heading first ?
-
-				const line = this.app.metadataCache.getFileCache(
-					this.app.vault.getMarkdownFiles().filter(
-						(file) => file.basename == matches[1])[0]
-					)["headings"].filter(
-						(heading) => heading.heading == matches[2]
-					)[0].position.end.line;
-
-				innerText = "";
-				href = "";
-
-				(linkElements[i] as HTMLElement).href = href.concat(page,"#",headingA);
-				(linkElements[i] as HTMLElement).className = 'heading-range-link';
-				(linkElements[i] as HTMLElement).setAttribute("linktext",page);
-				(linkElements[i] as HTMLElement).setAttribute("scrollline",line);
-
-				standardInnerText = "";
-				standardInnerText = standardInnerText.concat(page," > ",headingA," > ",headingB);
-
-				if ((linkElements[i] as HTMLElement).innerText == standardInnerText) {
-					innerText = innerText.concat(page,dividerP2H,headingA,dividerH2H,headingB);
-					(linkElements[i] as HTMLElement).innerText = innerText;
-				}
-
-				// TODO : Can we cache these elements ?
-
-				continue
-			}
-		}
-
-		this.registerMarkdownPostProcessor(postProc);
-
-		const hoverHeaderRange = (event: MouseEvent, target: HTMLElement) => {
-			this.app.workspace.trigger("link-hover",target,target, target.getAttribute("linktext"), "",{scroll:parseInt(target.getAttribute("scrollline"))})
-			// Apparently nothing else from eState than "scroll" will be used by the hover preview internals (see Discord message)
-			// TODO : Can I find a way to remove the yellow highlight ?
-			// TODO : Can I find a way to scroll to first heading when clicking on the link tooltip ?
-			// TODO : Can I find a way to display only the range in the popover instead of displaying the whole note and scroll to the first heading ?
-		}
-
-		const clickHeaderRange = async (event: MouseEvent, target: HTMLElement) => {
-			await this.app.workspace.openLinkText(target.getAttr("href"), "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
-			// TODO : scroll and highlight in yellow the heading range
-			// Tried to pass an ephemeral state, but without success...
-		}
-
-		document.on('mouseover', `.heading-range-link`, hoverHeaderRange);
-		document.on('click', `.heading-range-link`, clickHeaderRange);
-
+		document.on(`mouseover`, `.heading-range-link`, this.hoverHeaderRange.bind(this));
+		document.on(`mouseover`, `.heading-range-preview-link`, this.hoverHeaderPreviewRange.bind(this));
+		document.on('click', `.heading-range-link`, this.clickHeaderRange.bind(this));
 	}
 
 	onunload() {
 
-		document.off('mouseover', `.heading-range-link`, hoverHeaderRange);
-		document.off('click', `.heading-range-link`, clickHeaderRange);
+		document.off(`mouseover`, `.heading-range-link`, this.hoverHeaderRange.bind(this));
+		document.on(`mouseover`, `.heading-range-preview-link`, this.hoverHeaderPreviewRange.bind(this));
+		document.off('click', `.heading-range-link`, this.clickHeaderRange.bind(this));
 
 		// TODO : Option to loop through all files, 
 		// and replace [[Page#HeaderA#HeaderB]] by [[Page#HeaderA]]-HeaderB ?
 		// That would prevent the plugin from "beaking" notes
+	}
 
+	hoverHeaderPreviewRange(event: MouseEvent, target: HTMLElement) {
+		let linkText = target.innerText;
+		linkText = linkText.replace(`:`, `#`);
+		
+		this.app.workspace.trigger("link-hover",target,target, linkText, "",{scroll:parseInt(target.getAttribute("scrollline")!)})
+	}
+
+	hoverHeaderRange(event: MouseEvent, target: HTMLElement) {
+		console.log('hover header range', target, target.innerText, target.getAttribute("linktext"));
+		this.app.workspace.trigger("link-hover",target,target, target.getAttribute("linktext"), "",{scroll:parseInt(target.getAttribute("scrollline")!)})
+		// Apparently nothing else from eState than "scroll" will be used by the hover preview internals (see Discord message)
+		// TODO : Can I find a way to remove the yellow highlight ?
+		// TODO : Can I find a way to scroll to first heading when clicking on the link tooltip ?
+		// TODO : Can I find a way to display only the range in the popover instead of displaying the whole note and scroll to the first heading ?
+	}
+
+	async clickHeaderRange(event: MouseEvent, target: HTMLElement) {
+		console.log('click header range');
+		await this.app.workspace.openLinkText(target.getAttr("href")!, "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
+		// TODO : scroll and highlight in yellow the heading range
+		// Tried to pass an ephemeral state, but without success...
 	}
 
 	async loadSettings() {
