@@ -2,18 +2,26 @@ import { App } from 'obsidian';
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { syntaxTree, tokenClassNodeProp } from "@codemirror/language";
+import { LinkHeadingRangePluginSettings } from './plugin-settings';
 
-class CoolWidget extends WidgetType {
+class CharacterOverwriteWidget extends WidgetType {
+
+  private char: string;
+  constructor(char: string) {
+    super();
+    this.char = char;
+  }
+
   toDOM() {
     let el = document.createElement("span");
-    el.innerText = ':';
+    el.innerText = this.char;
     el.style.textDecoration = 'underline';
     return el;
   }
 }
 
-export function buildCMViewPlugin(app: App) {
-  // console.log('the codemirror plugin', app);
+export function buildCMViewPlugin(app: App, settings: LinkHeadingRangePluginSettings) {
+  console.log('the codemirror plugin', app);
 
   const viewPlugin = ViewPlugin.fromClass(
     class {
@@ -30,20 +38,18 @@ export function buildCMViewPlugin(app: App) {
           to: update.state.selection.ranges[0].to
         };
         if (update.docChanged || update.viewportChanged) {
-          // console.log(update.state.selection.ranges[0].from, 'to', update.state.selection.ranges[0].to);
-          // console.log('real update', update.docChanged, update.viewportChanged, update);
           this.decorations = this.buildDecorations(update.view, currentLocation);
         }
         else {
           if (update.state.selection.ranges.length > 0) {
-            // console.log(update.state.selection.ranges[0].from, 'to', update.state.selection.ranges[0].to);
-            // console.log('fake update');
             this.decorations = this.buildDecorations(update.view, currentLocation);
           }
         }
       }
 
       buildDecorations(view: EditorView, location: { from: number, to: number } | null): DecorationSet {
+        const replaceChars = true; // to be configurable later
+
         let builder = new RangeSetBuilder<Decoration>();
 
         const lastPassDecoratedRanges: Array<{from: number, to: number}> = this.decoratedRanges;
@@ -85,20 +91,32 @@ export function buildCMViewPlugin(app: App) {
                 if (isLink && !isAlias && !isPipe || isMDUrl) {
                   let linkText = view.state.doc.sliceString(node.from, node.to);
                   
-                  const indexOfRangeMarker = linkText.indexOf('#') + node.from;
-                  if (indexOfRangeMarker >= node.from && indexOfRangeMarker <= node.to) {
+                  const indexOfHeaderMarker = linkText.indexOf('#') + node.from;
+                  if (indexOfHeaderMarker >= node.from && indexOfHeaderMarker <= node.to) {
 
                     if (!inLastPass(node.from - 2, location?.from)) {
-                      let deco = Decoration.mark({
-                        class: "heading-range-preview-link"
+                      
+                      let attributeDeco = Decoration.mark({
+                        class: 'heading-range-live-link'
                       });
-                      console.log('node from and to', node.from, node.to);
-                      builder.add(node.from - 2, node.to + 2, deco);
+                      builder.add(node.from - 2, node.to + 2, attributeDeco);
 
-                      let myWidget = Decoration.widget({
-                        widget: new CoolWidget(),
-                      });
-                      builder.add(indexOfRangeMarker, indexOfRangeMarker + 1, myWidget);  
+                      if (replaceChars) {
+                        let overrideP2HWidget = Decoration.widget({
+                          widget: new CharacterOverwriteWidget(settings.dividerP2H),
+                        });
+                        builder.add(indexOfHeaderMarker, indexOfHeaderMarker + 1, overrideP2HWidget);  
+                      }
+
+                      const indexOfRangeMarker = linkText.indexOf('>') + node.from;
+                      if (indexOfRangeMarker >= node.from && indexOfRangeMarker <= node.to) {
+                        if (replaceChars) {
+                          let overrideH2HWidget = Decoration.widget({
+                            widget: new CharacterOverwriteWidget(settings.dividerH2H),
+                          });
+                          builder.add(indexOfRangeMarker, indexOfRangeMarker + 1, overrideH2HWidget);
+                        }
+                      }
 
                     }
 

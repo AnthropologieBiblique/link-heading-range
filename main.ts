@@ -1,17 +1,17 @@
 import { App, Plugin, PluginSettingTab, Keymap, Setting } from 'obsidian';
 import { buildCMViewPlugin } from './src/live-preview';
 import { postProcessorBuilder } from './src/reading-mode';
+import { HoverTargetFileProcessor } from './src/hover-target-file-processor';
+import { LinkTextParser } from './src/link-text-parser';
 
 import { Prec } from "@codemirror/state";
 import { LinkHeadingRangePluginSettings, DEFAULT_SETTINGS } from 'src/plugin-settings';
 
-// Remember to rename these classes and interfaces!
-
-
 export default class LinkHeadingRange extends Plugin {
 	settings: LinkHeadingRangePluginSettings;
 	app: App;
-	// hoverHeadingRangeFunc: (event: MouseEvent, target: HTMLElement) => void;
+	hoverHeadingRangeReadingModeFunc: (event: MouseEvent, target: HTMLElement) => void;
+	hoverHeadingRangeLiveModeFunc: (event: MouseEvent, target: HTMLElement) => void;
 	// clickHeadingRangeFunc: (event: MouseEvent, target: HTMLElement) => void;
 
 	async onload() {
@@ -25,19 +25,22 @@ export default class LinkHeadingRange extends Plugin {
 		this.registerMarkdownPostProcessor(postProcessorBuilder(app, this.settings));
 
 		// Live preview mode processor
-		const ext = Prec.lowest(buildCMViewPlugin(this.app));
+		const ext = Prec.lowest(buildCMViewPlugin(this.app, this.settings));
 		this.registerEditorExtension(ext);
 
-		document.on(`mouseover`, `.heading-range-link`, this.hoverHeaderRange.bind(this));
-		document.on(`mouseover`, `.heading-range-preview-link`, this.hoverHeaderPreviewRange.bind(this));
-		document.on('click', `.heading-range-link`, this.clickHeaderRange.bind(this));
+		this.hoverHeadingRangeReadingModeFunc = this.hoverHeaderPreviewRange.bind(this);
+		this.hoverHeadingRangeLiveModeFunc = this.hoverHeaderPreviewRange.bind(this);
+
+		document.on(`mouseover`, `.heading-range-reading-link`, this.hoverHeadingRangeReadingModeFunc);
+		document.on(`mouseover`, `.heading-range-live-link`, this.hoverHeadingRangeLiveModeFunc);
+		//document.on('click', `.heading-range-link`, this.clickHeaderRange.bind(this));
 	}
 
 	onunload() {
 
-		document.off(`mouseover`, `.heading-range-link`, this.hoverHeaderRange.bind(this));
-		document.on(`mouseover`, `.heading-range-preview-link`, this.hoverHeaderPreviewRange.bind(this));
-		document.off('click', `.heading-range-link`, this.clickHeaderRange.bind(this));
+		document.off(`mouseover`, `.heading-range-link`, this.hoverHeadingRangeReadingModeFunc);
+		document.on(`mouseover`, `.heading-range-preview-link`, this.hoverHeadingRangeLiveModeFunc);
+		//document.off('click', `.heading-range-link`, this.clickHeaderRange.bind(this));
 
 		// TODO : Option to loop through all files, 
 		// and replace [[Page#HeaderA#HeaderB]] by [[Page#HeaderA]]-HeaderB ?
@@ -46,13 +49,19 @@ export default class LinkHeadingRange extends Plugin {
 
 	hoverHeaderPreviewRange(event: MouseEvent, target: HTMLElement) {
 		let linkText = target.innerText;
-		linkText = linkText.replace(`:`, `#`);
-		
-		this.app.workspace.trigger("link-hover",target,target, linkText, "",{scroll:parseInt(target.getAttribute("scrollline")!)})
+		linkText = linkText.replace(':', '#').replace('-', '>');
+
+		const linkTextParseResult = LinkTextParser.parse(linkText);
+		if (linkTextParseResult !== null) {
+			const fileResult = HoverTargetFileProcessor.process(this.app, linkTextParseResult.fileName, linkTextParseResult.headingA);
+			this.app.workspace.trigger("link-hover",target,target, linkTextParseResult.fileName, '',{ scroll: fileResult?.startLine })
+		}
+		else {
+			this.app.workspace.trigger("link-hover",target,target, linkText, '', { scroll: 0 });
+		}
 	}
 
 	hoverHeaderRange(event: MouseEvent, target: HTMLElement) {
-		console.log('hover header range', target, target.innerText, target.getAttribute("linktext"));
 		this.app.workspace.trigger("link-hover",target,target, target.getAttribute("linktext"), "",{scroll:parseInt(target.getAttribute("scrollline")!)})
 		// Apparently nothing else from eState than "scroll" will be used by the hover preview internals (see Discord message)
 		// TODO : Can I find a way to remove the yellow highlight ?
@@ -61,7 +70,6 @@ export default class LinkHeadingRange extends Plugin {
 	}
 
 	async clickHeaderRange(event: MouseEvent, target: HTMLElement) {
-		console.log('click header range');
 		await this.app.workspace.openLinkText(target.getAttr("href")!, "/",Keymap.isModifier(event, 'Mod') || 1 === event.button)
 		// TODO : scroll and highlight in yellow the heading range
 		// Tried to pass an ephemeral state, but without success...
@@ -98,7 +106,6 @@ class LinkHeadingRangeSettingTab extends PluginSettingTab {
 				.setPlaceholder('Enter a symbol')
 				.setValue(this.plugin.settings.dividerP2H)
 				.onChange(async (value) => {
-					console.log('dividerP2H: ' + value);
 					this.plugin.settings.dividerP2H = value;
 					await this.plugin.saveSettings();
 				}));
@@ -110,7 +117,6 @@ class LinkHeadingRangeSettingTab extends PluginSettingTab {
 				.setPlaceholder('Enter a symbol')
 				.setValue(this.plugin.settings.dividerH2H)
 				.onChange(async (value) => {
-					console.log('dividerH2H: ' + value);
 					this.plugin.settings.dividerH2H = value;
 					await this.plugin.saveSettings();
 				}));
