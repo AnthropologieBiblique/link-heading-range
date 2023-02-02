@@ -1,10 +1,10 @@
 {
 	"id": "link-heading-range",
 	"name": "Link heading range",
-	"version": "0.0.2",
+	"version": "0.1.0",
 	"minAppVersion": "1.0.0",
-	"description": "Link to heading range using the extended wikilink syntax [[Page#HeaderA#HeaderB]]",
-	"author": "Anthropologie Biblique",
+	"description": "Link to heading range using the extended wikilink syntax [[Page#HeaderA>HeaderB]]",
+	"author": "Mallioch, Anthropologie Biblique",
 	"authorUrl": "https://anthropologiebiblique.fr",
 	"isDesktopOnly": false
 }
